@@ -1,0 +1,36 @@
+//@version=5
+indicator("Hamed2 Strategy", overlay=true)
+
+// تنظیمات ورودی
+hour_start = input.int(17, title="زمان شروع", minval=0, maxval=23)
+show_alert = false
+var float highestPrice = na
+var float lowestPrice = na
+var bool drow_lins = false
+
+// زمان شروع و پایان
+startTime = timestamp(year, month, dayofmonth, hour_start, 0)
+endTime = timestamp(year, month, dayofmonth, hour_start, 10)
+
+// محاسبه بالاترین و پایین‌ترین قیمت
+if (time >= startTime and time <= endTime)
+    highestPrice := na(highestPrice) ? high : highestPrice
+    lowestPrice := na(lowestPrice) ? low : lowestPrice
+    for i = 1 to 2
+        highestPrice := math.max(highestPrice, ta.highest(i))
+        lowestPrice := math.min(lowestPrice, ta.lowest(i))
+
+// رسم خطوط
+if (time == endTime and not drow_lins)
+    line.new(bar_index, highestPrice, bar_index + 1, highestPrice, color=color.green, width=1, style=line.style_dashed)
+    line.new(bar_index, lowestPrice, bar_index + 1, lowestPrice, color=color.crimson, width=1, style=line.style_dashed)
+    drow_lins := true
+
+// اعلام سیگنال‌ها
+if (close > highestPrice and drow_lins and not show_alert)
+    label.new(bar_index, close, text="Long", color=color.green, style=label.style_label_up, textcolor=color.white)
+    alert("Long Signal: " + syminfo.tickerid + " | " + str.tostring(time), alert.freq_once_per_bar)
+
+if (close < lowestPrice and drow_lins and not show_alert)
+    label.new(bar_index, close, text="Short", color=color.red, style=label.style_label_down, textcolor=color.white)
+    alert("Short Signal: " + syminfo.tickerid + " | " + str.tostring(time), alert.freq_once_per_bar)
