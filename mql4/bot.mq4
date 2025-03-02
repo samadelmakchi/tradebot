@@ -1,12 +1,11 @@
 //--------------------------------------------------------------------------------------------
-//                                                                                Hamed2.mq5 |
+//                                                                                   bot.mq4 |
 //                                                                            Samad Elmakchi |
 //                                                                   https://www.elmakchi.ir |
 //--------------------------------------------------------------------------------------------
 #property copyright   "Samad Elmakchi"
 #property link        "https://www.elmakchi.ir"
 #property version     "1.00"
-#property icon        "icon.ico"
 
 bool drow_lins = false;
 bool show_alert = false;
@@ -14,133 +13,99 @@ double highestPrice = 0;
 double lowestPrice = 0;
 
 //--------------------------------------------------------------------------------------------
-
-input group "تنظیمات عمومی";
 input int hour_start = 17;      // زمان شروع
 
 //--------------------------------------------------------------------------------------------
-int OnInit(){
-	//---------
-   	if (Period() != 5){
-		Alert("فقط در تایم فریم 5 دقیقه فعال می باشد");
-		ExpertRemove();
-	}
-	//---------
-	// if(TerminalInfoInteger(TERMINAL_TRADE_ALLOWED)){
-	// 	Alert("مجاز به ترید نمی باشید");
-	// 	ExpertRemove();
-	// }
-	// //---------
-	// if(MQLInfoInteger(MQL_TRADE_ALLOWED) == 0){
-	// 	Alert("مجاز به ترید نمی باشد Algo Trading فعال نشده است");
-	// 	ExpertRemove();
-	// }
-	// //---------
-	// if((int)AccountInfoInteger(ACCOUNT_TRADE_EXPERT) == 0){
-	// 	Alert("اکانت بروکر برای معاملات خودکار مجاز نمی باشد. ", AccountInfoInteger(ACCOUNT_LOGIN));
-	// 	ExpertRemove();
-	// }
-	//---------
-   	return(INIT_SUCCEEDED);
+int init(){
+    if (Period() != 5){
+        Alert("فقط در تایم فریم 5 دقیقه فعال می باشد");
+        return(INIT_FAILED);
+    }
+    return(INIT_SUCCEEDED);
 }
 //--------------------------------------------------------------------------------------------
-void OnTick(){
-	datetime currentTime = TimeCurrent();
-	datetime startTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":00");
-	datetime endTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":10");
-	
-	double my_open = iOpen(NULL, 0, 1);
-	double my_close = iClose(NULL, 0, 1);
-	datetime my_time = iTime(NULL, 0, 1);
+void start(){
+    datetime currentTime = TimeCurrent();
+    datetime startTime = StrToTime(TimeToStr(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":00");
+    datetime endTime = StrToTime(TimeToStr(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":10");
+    
+    double my_open = iOpen(NULL, 5, 1);
+    double my_close = iClose(NULL, 5, 1);
+    datetime my_time = iTime(NULL, 5, 1);
 
-	double tempHighPrice = 0;
-	double tempLowPrice = 0;
+    double tempHighPrice = 0;
+    double tempLowPrice = 0;
+    
+    string my_symbol = Symbol();
 
-	string my_symbol = Symbol();
-
-	int my_count = 2;
-	//-----------------------------------------------
-	if(currentTime == startTime){
-		drow_lins = false;
-		show_alert = false;
-		highestPrice = 0;
-		lowestPrice = 0;
-	}
-	//-----------------------------------------------
-	if(Symbol() == "XAUUSD"){
-		my_count = 7;
-		endTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":35");
-	}
-	//-----------------------------------------------
-	if ((currentTime >= startTime) && (currentTime <= endTime) && (!drow_lins)){
-		highestPrice = iHigh(NULL, 0, 1);
-		lowestPrice = iLow(NULL, 0, 1);
-		for(int i=1;i<=my_count;i++){
-			tempHighPrice = iHigh(NULL, 0, i);
-			tempLowPrice = iLow(NULL, 0, i);
-			if(tempHighPrice > highestPrice)
-				highestPrice = tempHighPrice;
-			if(tempLowPrice < lowestPrice)
-				lowestPrice = tempLowPrice;
-		}
-		if(currentTime == endTime)
-			my_drow_line();
-	}
-	//-----------------------------------------------	
-	if((my_close > highestPrice) && (drow_lins) && (!show_alert))
-		myPrint(my_symbol + " | Long | " + TimeToString(my_time,TIME_DATE|TIME_SECONDS));
-	if((my_close < lowestPrice) && (drow_lins) && (!show_alert))
-		myPrint(my_symbol + " | Short | " + TimeToString(my_time,TIME_DATE|TIME_SECONDS));
+    int my_count = 2;
+    //-----------------------------------------------
+    if(currentTime == startTime){
+        drow_lins = false;
+        show_alert = false;
+        highestPrice = 0;
+        lowestPrice = 0;
+    }
+    //-----------------------------------------------
+    if(Symbol() == "XAUUSD"){
+        my_count = 7;
+        endTime = StrToTime(TimeToStr(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":35");
+    }
+    //-----------------------------------------------
+    if ((currentTime >= startTime) && (currentTime <= endTime) && (!drow_lins)){
+        highestPrice = iHigh(NULL, 5, 1);
+        lowestPrice = iLow(NULL, 5, 1);
+        for(int i=1; i<=my_count; i++){
+            tempHighPrice = iHigh(NULL, 5, i);
+            tempLowPrice = iLow(NULL, 5, i);
+            if(tempHighPrice > highestPrice)
+                highestPrice = tempHighPrice;
+            if(tempLowPrice < lowestPrice)
+                lowestPrice = tempLowPrice;
+        }
+        if(currentTime == endTime)
+            my_drow_line();
+    }
+    //-----------------------------------------------    
+    if((my_close > highestPrice) && (drow_lins) && (!show_alert))
+        myPrint(my_symbol + " | Long | " + TimeToStr(my_time,TIME_SECONDS));
+    if((my_close < lowestPrice) && (drow_lins) && (!show_alert))
+        myPrint(my_symbol + " | Short | " + TimeToStr(my_time,TIME_SECONDS));
 }
 //--------------------------------------------------------------------------------------------
 void my_drow_line(){
-    long chart_ID = ChartID();
-	drow_lins = true;
-	//-----------------------------------------------
-	int obj_count = ObjectsTotal(chart_ID,-1,OBJ_HLINE);
-	for (int i=obj_count-1; i>=0; i--){
-		string line_name = ObjectName(chart_ID, i, -1, OBJ_HLINE);
-		ObjectDelete(chart_ID, line_name);
-	}
-	//-----------------------------------------------
-    string obj_name = DoubleToString(highestPrice) + IntegerToString(MathRand());
-	if(ObjectCreate(chart_ID, obj_name, OBJ_HLINE, 0, 0, highestPrice)){
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_COLOR,clrGreen);        // line color
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_RAY_RIGHT,false);         // line's continuation to the right
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_STYLE,STYLE_DASH);        // line style
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_WIDTH,1);                 // line width
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_BACK,false);              // in the background
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_SELECTABLE,true);         // highlight to move
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_SELECTED,false);
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_HIDDEN,false);            // hidden in the object list
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_ZORDER,0);                // priority for mouse click         
-	}
-	else
-		Print("Error: can't create trend line! code = " + IntegerToString(GetLastError()));
-	//-----------------------------------------------
-    obj_name = DoubleToString(lowestPrice) + IntegerToString(MathRand());
-	if(ObjectCreate(chart_ID, obj_name, OBJ_HLINE, 0, 0, lowestPrice)){
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_COLOR,clrCrimson);      // line color
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_RAY_RIGHT,false);         // line's continuation to the right
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_STYLE,STYLE_DASH);        // line style
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_WIDTH,1);                 // line width
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_BACK,false);              // in the background
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_SELECTABLE,true);         // highlight to move
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_SELECTED,false);
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_HIDDEN,false);            // hidden in the object list
-		ObjectSetInteger(chart_ID,obj_name,OBJPROP_ZORDER,0);                // priority for mouse click         
-	}
-	else
-		Print("Error: can't create trend line! code = " + IntegerToString(GetLastError()));
-	//-----------------------------------------------
+    drow_lins = true;
+    //-----------------------------------------------
+    int obj_count = ObjectsTotal();
+    for (int i = obj_count-1; i >= 0; i--){
+        string line_name = ObjectName(i);
+        ObjectDelete(line_name);
+    }
+    //-----------------------------------------------
+    string obj_name = DoubleToStr(highestPrice) + IntegerToString(MathRand());
+    if(ObjectCreate(obj_name, OBJ_HLINE, 0, 0, highestPrice)){
+        ObjectSet(obj_name, OBJPROP_COLOR, Blue);
+        ObjectSet(obj_name, OBJPROP_STYLE, STYLE_DASH);
+        ObjectSet(obj_name, OBJPROP_WIDTH, 1);
+    }
+    else
+        Print("Error: can't create trend line! code = " + IntegerToString(GetLastError()));
+    //-----------------------------------------------
+    obj_name = DoubleToStr(lowestPrice) + IntegerToString(MathRand());
+    if(ObjectCreate(obj_name, OBJ_HLINE, 0, 0, lowestPrice)){
+        ObjectSet(obj_name, OBJPROP_COLOR, Red);
+        ObjectSet(obj_name, OBJPROP_STYLE, STYLE_DASH);
+        ObjectSet(obj_name, OBJPROP_WIDTH, 1);
+    }
+    else
+        Print("Error: can't create trend line! code = " + IntegerToString(GetLastError()));
+    //-----------------------------------------------
 }
 //--------------------------------------------------------------------------------------------
 void myPrint(string tstr){
-	show_alert = true;
-	Print(tstr);
-	Alert(tstr);
-	SendNotification(tstr);
-	SendTelegramMessage(tstr);
+    show_alert = true;
+    Print(tstr);
+    Alert(tstr);
 }
 //--------------------------------------------------------------------------------------------
 
