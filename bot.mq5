@@ -26,13 +26,16 @@ int OnInit(){
 		ExpertRemove();
 	}
 	//---------
+	Print("Start Bot");
+	//---------
    	return(INIT_SUCCEEDED);
 }
 //--------------------------------------------------------------------------------------------
 void OnTick(){
-	datetime currentTime = TimeCurrent();
+	datetime currentTime = TimeLocal();
+	currentTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + TimeToString(currentTime,TIME_MINUTES));
 	datetime startTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":00");
-	datetime endTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":10");
+	datetime endTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":05");
 	
 	double my_open = iOpen(NULL, 0, 1);
 	double my_close = iClose(NULL, 0, 1);
@@ -43,7 +46,7 @@ void OnTick(){
 
 	string my_symbol = Symbol();
 
-	int my_count = 2;
+	int my_count = 1;
 	//-----------------------------------------------
 	if(currentTime == startTime){
 		drow_lins = false;
@@ -53,11 +56,11 @@ void OnTick(){
 	}
 	//-----------------------------------------------
 	if(Symbol() == "XAUUSD"){
-		my_count = 7;
-		endTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":35");
+		my_count = 6;
+		endTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":30");
 	}
 	//-----------------------------------------------
-	if ((currentTime >= startTime) && (currentTime <= endTime) && (!drow_lins)){
+	if ((currentTime == endTime) && (!drow_lins)){
 		highestPrice = iHigh(NULL, 0, 1);
 		lowestPrice = iLow(NULL, 0, 1);
 		for(int i=1;i<=my_count;i++){
