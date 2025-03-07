@@ -63,7 +63,7 @@ void OnTick(){
 		endTime = StringToTime(TimeToString(currentTime, TIME_DATE) + " " + IntegerToString(hour_start) + ":30");
 	}
 	//-----------------------------------------------
-	if ((currentTime == endTime) && (!drow_lins)){
+	if ((currentTime >= endTime) && (!drow_lins)){
 		highestPrice = iHigh(NULL, 0, 1);
 		lowestPrice = iLow(NULL, 0, 1);
 		for(int i=1;i<=my_count;i++){
@@ -74,8 +74,7 @@ void OnTick(){
 			if(tempLowPrice < lowestPrice)
 				lowestPrice = tempLowPrice;
 		}
-		if(currentTime == endTime)
-			my_drow_line();
+		my_drow_line();
 	}
 	//-----------------------------------------------	
 	if((my_close > highestPrice) && (drow_lins) && (!show_alert))
