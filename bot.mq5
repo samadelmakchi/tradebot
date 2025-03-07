@@ -15,8 +15,10 @@ double lowestPrice = 0;
 
 //--------------------------------------------------------------------------------------------
 
-input group "تنظیمات عمومی";
-input int hour_start = 17;      // زمان شروع
+input group "تنظیمات عمومی"; 
+input int hour_start = 17;                                                           // زمان شروع
+input string telegram_bot_token = "7861695393:AAHcinMI-jDObsOeZ26xoHPjr1mIJHZ5EUw";  // توکن ربات تلگرام
+input string telegram_chat_id = "-1002461252694";                                    // آیدی چت یا گروه تلگرام
 
 //--------------------------------------------------------------------------------------------
 int OnInit(){
@@ -26,7 +28,8 @@ int OnInit(){
 		ExpertRemove();
 	}
 	//---------
-	Print("Start Bot");
+	Print("📈Start Bot📉");
+	SendTelegramMessage("📈Start Bot📉");
 	//---------
    	return(INIT_SUCCEEDED);
 }
@@ -76,9 +79,9 @@ void OnTick(){
 	}
 	//-----------------------------------------------	
 	if((my_close > highestPrice) && (drow_lins) && (!show_alert))
-		myPrint(my_symbol + " | Long | " + TimeToString(my_time,TIME_DATE|TIME_SECONDS));
+		myPrint("📈 Long | " + my_symbol + " | " + TimeToString(my_time,TIME_DATE|TIME_SECONDS));
 	if((my_close < lowestPrice) && (drow_lins) && (!show_alert))
-		myPrint(my_symbol + " | Short | " + TimeToString(my_time,TIME_DATE|TIME_SECONDS));
+		myPrint("📉 Short | " + my_symbol + " | " + TimeToString(my_time,TIME_DATE|TIME_SECONDS));
 }
 //--------------------------------------------------------------------------------------------
 void my_drow_line(){
@@ -131,147 +134,26 @@ void myPrint(string tstr){
 	SendTelegramMessage(tstr);
 }
 //--------------------------------------------------------------------------------------------
+// Tools -> Options -> Expert Advisors -> Allow WebRequest for listed URL: -> Add -> https://api.telegram.org -> OK 
+void SendTelegramMessage(string message){
+	string url = "https://api.telegram.org/bot" + telegram_bot_token + "/sendMessage";
+    string headers = "Content-Type: application/x-www-form-urlencoded";
+    string postData = "chat_id=" + telegram_chat_id + "&text=" + message;
+	char postDataArray[];
+	int postDataSize = StringToCharArray(postData, postDataArray) - 1;  
+	char result[];
+	string result_headers;
 
+	int response = WebRequest("POST", url, headers, "", 5000, postDataArray, postDataSize, result, result_headers);
+	if(response == -1)
+		Print("❌ خطا در ارسال پیام به تلگرام: ", GetLastError());
+	else
+		Print("✅ پیام به تلگرام ارسال شد: ", message);
 
-
-//-------------------------------------------------------------------------------------------------------------------------
-//                                                                                                                        |
-//                                                 Send Message To Telegram                                               |
-//                                                   Samad Elmakchi (SMD)                                                 |
-//                                                                                                                        |
-//   Tools -> Options -> Expert Advisors -> Allow WebRequest for listed URL: -> Add -> https://api.telegram.org -> OK     |
-//                                                                                                                        |
-//   How To Used                                                                                                          |
-//   SendTelegramMessage("My Message"); // no image attached                                                              |
-//                                                                                                                        |
-//   ChartScreenShot(0, "MyScreenshot.bmp", 1024, 768, ALIGN_RIGHT);                                                      |
-//   SendTelegramMessage("Message", "MyScreenshot.jpg");                                                                  |                                
-//                                                                                                                        |
-//-------------------------------------------------------------------------------------------------------------------------
-const string TelegramBotToken = "7662953174:AAES-D9JLPiHZ2NF_yTihDGdchEhC_EwNFw";  // Your Bot ID -> BotFather
-const string ChatId           = "-1002284392265";                                  // Your Telegram ID -> Get Telegram ID Bot
-const string TelegramApiUrl   = "https://api.telegram.org"; // Add This To Allow URLs
-const int    UrlDefinedError  = 4014;                       // MT4: 4066 - MT5: 4014
-//-------------------------------------------------------------------------------------------------------------------------
-bool SendTelegramMessage(string text, string fileName = ""){
-	string headers    = "";
-	string requestUrl = "";
-	char   postData[];
-	char   resultData[];
-	string resultHeaders;
-	int    timeout = 5000; // 1 second, may be too short for a slow connection
-	//------
-	ResetLastError();
-	if(fileName == ""){
-		requestUrl = StringFormat("%s/bot%s/sendmessage?chat_id=%s&text=%s", TelegramApiUrl, TelegramBotToken, ChatId, text);
-	}
-	else {
-		requestUrl = StringFormat("%s/bot%s/sendPhoto", TelegramApiUrl, TelegramBotToken);
-		if(!GetPostData(postData, headers, ChatId, text, fileName)){
-			return(false);
-		}
-	}
-	//------
-	ResetLastError();
-	int response = WebRequest("POST", requestUrl, headers, timeout, postData, resultData, resultHeaders);
-	switch(response){
-		case -1:{
-			int errorCode = GetLastError();
-			Print("Error in WebRequest. Error code  =", errorCode);
-			if(errorCode == UrlDefinedError){
-				//--- url may not be listed
-				PrintFormat("Add the address '%s' in the list of allowed URLs", TelegramApiUrl);
-			}
-			break;
-		}
-		case 200:
-			//--- Success
-			Print("The message has been successfully sent");
-			break;
-		default:{
-			string result = CharArrayToString(resultData);
-			PrintFormat("Unexpected Response '%i', '%s'", response, result);
-			break;
-		}
-	}
-	return(response == 200);
+    // int result_code = WebRequest("POST", url, headers, 5000, postDataArray, result, result_headers);
+    // if (result_code == 200)
+    //     Print("✅ پیام به تلگرام ارسال شد: ", message);
+    // else
+    //     Print("❌ خطا در ارسال پیام به تلگرام: ", GetLastError());
 }
-//-------------------------------------------------------------------------------------------------------------------------
-bool GetPostData(char &postData[], string &headers, string chat, string text, string fileName){
-	ResetLastError();
-	//------
-	if(!FileIsExist(fileName)){
-		PrintFormat("File '%s' does not exist", fileName);
-		return(false);
-	}
-	//------
-	int flags = FILE_READ | FILE_BIN;
-	int file  = FileOpen(fileName, flags);
-	if(file == INVALID_HANDLE){
-		int err = GetLastError();
-		PrintFormat("Could not open file '%s', error=%i", fileName, err);
-		return(false);
-	}
-	//------
-	int   fileSize = (int)FileSize(file);
-	uchar photo[];
-	ArrayResize(photo, fileSize);
-	FileReadArray(file, photo, 0, fileSize);
-	FileClose(file);
-	//------
-	string hash = "";
-	AddPostData(postData, hash, "chat_id", chat);
-	if(StringLen(text) > 0){
-		AddPostData(postData, hash, "caption", text);
-	}
-	AddPostData(postData, hash, "photo", photo, fileName);
-	ArrayCopy(postData, "--" + hash + "--\r\n");
-	//------
-	headers = "Content-Type: multipart/form-data; boundary=" + hash + "\r\n";
-	//------
-	return(true);
-}
-//-------------------------------------------------------------------------------------------------------------------------
-void AddPostData(uchar &data[], string &hash, string key = "", string value = ""){
-	uchar valueArr[];
-	StringToCharArray(value, valueArr, 0, StringLen(value));
-	AddPostData(data, hash, key, valueArr);
-	return;
-}
-//-------------------------------------------------------------------------------------------------------------------------
-void AddPostData(uchar &data[], string &hash, string key, uchar &value[], string fileName = ""){
-	if(hash == ""){
-		hash = Hash();
-	}
-	ArrayCopy(data, "\r\n");
-	ArrayCopy(data, "--" + hash + "\r\n");
-	if(fileName == ""){
-		ArrayCopy(data, "Content-Disposition: form-data; name=\"" + key + "\"\r\n");
-	}
-	else{
-		ArrayCopy(data, "Content-Disposition: form-data; name=\"" + key + "\"; filename=\"" + fileName + "\"\r\n");
-	}
-	ArrayCopy(data, "\r\n");
-	ArrayCopy(data, value, ArraySize(data));
-	ArrayCopy(data, "\r\n");
-	return;
-}
-//-------------------------------------------------------------------------------------------------------------------------
-void ArrayCopy(uchar &dst[], string src){
-	uchar srcArray[];
-	StringToCharArray(src, srcArray, 0, StringLen(src));
-	ArrayCopy(dst, srcArray, ArraySize(dst), 0, ArraySize(srcArray));
-	return;
-}
-//-------------------------------------------------------------------------------------------------------------------------
-string Hash(){
-	uchar  tmp[];
-	string seed = IntegerToString(TimeCurrent());
-	int    len  = StringToCharArray(seed, tmp, 0, StringLen(seed));
-	string hash = "";
-	for(int i=0; i<len; i++)
-		hash += StringFormat("%02X", tmp[i]);
-	hash = StringSubstr(hash, 0, 16);
-	return(hash);
-}
-//-------------------------------------------------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------
